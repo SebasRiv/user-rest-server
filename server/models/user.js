@@ -4,7 +4,7 @@ const uniqueValidator = require('mongoose-unique-validator');
 // Allowed server roles
 const validRoles = {
     values: ['ADMIN_ROLE', 'USER_ROLE'],
-    message: '{VALUE} no es un rol definido'
+    message: '{VALUE} is not a valid role'
 }
 
 // User database model in mongodb
