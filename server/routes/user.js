@@ -1,5 +1,7 @@
 const { Router } = require('express');
 
+const { tokenVerification, adminRoleVerification } = require('../middlewares/authentication');
+
 // Crate de router closure
 const router = Router();
 
@@ -11,12 +13,13 @@ router.route('/test')
     .get(testServer);
 
 router.route('/user')
-    .get(getUsers)
+    .get([tokenVerification, adminRoleVerification], getUsers)
     .post(createUser);
 
 router.route('/user/:id')
+    .all(tokenVerification)
     .get(getUser)
-    .put(updateUser)
-    .delete(deleteUser);
+    .put(adminRoleVerification, updateUser)
+    .delete(adminRoleVerification, deleteUser);
 
 module.exports = router;

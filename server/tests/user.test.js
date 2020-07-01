@@ -6,6 +6,8 @@ const User = require('../models/user');
 
 const { setupDB } = require('./test-setup');
 
+require('../config/config');
+
 setupDB('test');
 
 test('Server works test', async done => {
@@ -21,8 +23,29 @@ test('Server works test', async done => {
 });
 
 test('GET users', async done => {
+
+    const user = new User({
+        name: "test",
+        username: "test",
+        password: await bcrypt.hash("123456", 10),
+        email: "test@mail.com",
+        role: "ADMIN_ROLE"
+    });
+
+    const userDB = await user.save();
+
+    const login = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: userDB.email,
+            password: "123456"
+        });
+
+    console.log(login.body);
+
     const res = await request(app)
-        .get('/api/v1/user');
+        .get('/api/v1/user')
+        .set('token', login.body.token);
 
     expect(res.status).toBe(200);
     expect(res.body.users.length).toBeGreaterThanOrEqual(0);
@@ -79,17 +102,35 @@ test('No data create user', async done => {
 });
 
 test('PUT Update a user success', async done => {
+
     const user = new User({
         name: "test",
         username: "test",
-        password: "123456",
-        email: "test@mail.com"
+        password: await bcrypt.hash("123456", 10),
+        email: "test@mail.com",
+        role: "ADMIN_ROLE"
     });
 
-    const userCreated = await user.save();
+    const user2 = new User({
+        name: "test1",
+        username: "test1",
+        password: "123456",
+        email: "test1@mail.com"
+    });
+
+    const userDB = await user.save();
+    const userCreated = await user2.save();
+
+    const login = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: userDB.email,
+            password: "123456"
+        });
 
     const res = await request(app)
         .put(`/api/v1/user/${userCreated._id}`)
+        .set('token', login.body.token)
         .send({
             name: "testUpdated"
         });
@@ -104,17 +145,35 @@ test('PUT Update a user success', async done => {
 });
 
 test('PUT Update a user wrong id', async done => {
+
     const user = new User({
         name: "test",
         username: "test",
-        password: "123456",
-        email: "test@mail.com"
+        password: await bcrypt.hash("123456", 10),
+        email: "test@mail.com",
+        role: "ADMIN_ROLE"
     });
 
-    const userCreated = await user.save();
+    const user2 = new User({
+        name: "test1",
+        username: "test1",
+        password: "123456",
+        email: "tes1t@mail.com"
+    });
+
+    const userCreated = await user2.save();
+    const userDB = await user.save();
+
+    const login = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: userDB.email,
+            password: "123456"
+        });
 
     const res = await request(app)
         .put(`/api/v1/user/${userCreated._id}5`)
+        .set('token', login.body.token)
         .send({
             name: "testUpdated"
         });
@@ -127,6 +186,23 @@ test('PUT Update a user wrong id', async done => {
 
 test('PUT don\'t update passsword', async done => {
 
+    const user = new User({
+        name: "test",
+        username: "test",
+        password: await bcrypt.hash("123456", 10),
+        email: "test@mail.com",
+        role: "ADMIN_ROLE"
+    });
+
+    const userDB = await user.save();
+
+    const login = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: userDB.email,
+            password: "123456"
+        });
+
     const res1 = await request(app)
         .post('/api/v1/user')
         .send({
@@ -138,31 +214,48 @@ test('PUT don\'t update passsword', async done => {
 
     const res2 = await request(app)
         .put(`/api/v1/user/${res1.body.userCreated._id}`)
+        .set('token', login.body.token)
         .send({
             password: "123456789"
         });
 
-    const userDB = await User.findById(res1.body.userCreated._id);
+    const userDB2 = await User.findById(res1.body.userCreated._id);
 
-    expect(await bcrypt.compare("123456789", userDB.password)).toBeFalsy();
-    expect(await bcrypt.compare("123456", userDB.password)).toBeTruthy();
+    expect(await bcrypt.compare("123456789", userDB2.password)).toBeFalsy();
+    expect(await bcrypt.compare("123456", userDB2.password)).toBeTruthy();
 
     done();
 });
 
 test('DELETE user success', async done => {
-
     const user = new User({
         name: "test",
         username: "test",
-        password: "123456",
-        email: "test@mail.com"
+        password: await bcrypt.hash("123456", 10),
+        email: "test@mail.com",
+        role: "ADMIN_ROLE"
     });
 
-    const userCreated = await user.save();
+    const user2 = new User({
+        name: "test1",
+        username: "test1",
+        password: "123456",
+        email: "test1@mail.com"
+    });
+
+    const userCreated = await user2.save();
+    const userDB = await user.save();
+
+    const login = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: userDB.email,
+            password: "123456"
+        });
 
     const res = await request(app)
-        .delete(`/api/v1/user/${userCreated._id}`);
+        .delete(`/api/v1/user/${userCreated._id}`)
+        .set('token', login.body.token);
 
     expect(res.status).toBe(200);
     expect(res.body.userDeleted.state).toBe("false");
@@ -171,18 +264,34 @@ test('DELETE user success', async done => {
 });
 
 test('DELETE user wrong id', async done => {
-
     const user = new User({
         name: "test",
         username: "test",
-        password: "123456",
-        email: "test@mail.com"
+        password: await bcrypt.hash("123456", 10),
+        email: "test@mail.com",
+        role: "ADMIN_ROLE"
     });
 
-    const userCreated = await user.save();
+    const user2 = new User({
+        name: "test1",
+        username: "test1",
+        password: "123456",
+        email: "test1@mail.com"
+    });
+
+    const userCreated = await user2.save();
+    const userDB = await user.save();
+
+    const login = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: userDB.email,
+            password: "123456"
+        });
 
     const res = await request(app)
-        .delete(`/api/v1/user/${userCreated._id}0`);
+        .delete(`/api/v1/user/${userCreated._id}0`)
+        .set('token', login.body.token);
 
     expect(res.status).toBe(400);
     expect(res.body.ok).toBeFalsy();
@@ -194,17 +303,34 @@ test('GET one user success', async done => {
     const user = new User({
         name: "test",
         username: "test",
-        password: "123456",
-        email: "test@mail.com"
+        password: await bcrypt.hash("123456", 10),
+        email: "test@mail.com",
+        role: "ADMIN_ROLE"
     });
 
+    const user2 = new User({
+        name: "test1",
+        username: "test1",
+        password: "123456",
+        email: "test1@mail.com"
+    });
+
+    const userDB1 = await user2.save();
     const userDB = await user.save();
 
+    const login = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: userDB.email,
+            password: "123456"
+        });
+
     const res = await request(app)
-        .get(`/api/v1/user/${userDB._id}`);
+        .get(`/api/v1/user/${userDB1._id}`)
+        .set('token', login.body.token);
 
     expect(res.status).toBe(200);
-    expect(userDB._id.toString()).toEqual(res.body.user._id);
+    expect(userDB1._id.toString()).toEqual(res.body.user._id);
 
     done();
 });
@@ -213,14 +339,31 @@ test('GET one user wrong id', async done => {
     const user = new User({
         name: "test",
         username: "test",
-        password: "123456",
-        email: "test@mail.com"
+        password: await bcrypt.hash("123456", 10),
+        email: "test@mail.com",
+        role: "ADMIN_ROLE"
     });
 
+    const user1 = new User({
+        name: "test1",
+        username: "test1",
+        password: "123456",
+        email: "test1@mail.com"
+    });
+
+    const userDB1 = await user1.save();
     const userDB = await user.save();
 
+    const login = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: userDB.email,
+            password: "123456"
+        });
+
     const res = await request(app)
-        .get(`/api/v1/user/${userDB._id}5`);
+        .get(`/api/v1/user/${userDB1._id}5`)
+        .set('token', login.body.token);
 
     expect(res.status).toBe(400);
     expect(res.body.ok).toBeFalsy();
