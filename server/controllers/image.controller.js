@@ -89,12 +89,14 @@ imageController.getImage = async (req, res) => {
 
     const pathImage = path.resolve(__dirname, `../../uploads/${type}/${img}`);
 
-    if (fs.existsSync(pathImage)) {
-        res.sendFile(pathImage);
-    } else {
-        const noImagePath = path.resolve(__dirname, `../assets/no-image.jpg`);
-        res.sendFile(noImagePath);
-    }
+    fs.access(pathImage, fs.constants.F_OK, (error) => {
+        if (!error) {
+            res.sendFile(pathImage);
+        } else {
+            const noImagePath = path.resolve(__dirname, `../assets/no-image.jpg`);
+            res.sendFile(noImagePath);
+        }
+    });
 }
 
 const saveFile = (file, type, fileName) => {
@@ -109,6 +111,7 @@ const userImage = async (id, res, fileName) => {
 
         return res.status(400).json({
             ok: false,
+            pija: 'chontaduro',
             error: {
                 message: 'The user doesn\'t exist'
             }

@@ -41,8 +41,6 @@ test('GET users', async done => {
             password: "123456"
         });
 
-    console.log(login.body);
-
     const res = await request(app)
         .get('/api/v1/user')
         .set('token', login.body.token);
